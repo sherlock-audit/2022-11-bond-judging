@@ -155,144 +155,7 @@ Acknowledged. We added the check for the owner to be whitelisted for a callback 
 
 
 
-# Issue M-2: findMarketFor() missing check minAmountOut_ 
-
-Source: https://github.com/sherlock-audit/2022-11-bond-judging/issues/38 
-
-## Found by 
-bin2chen
-
-## Summary
-BondAggregator#findMarketFor() minAmountOut_ does not actually take effect，may return a market's "payout" smaller than minAmountOut_ , Causes users to waste gas calls to purchase
-
-## Vulnerability Detail
-BondAggregator#findMarketFor() has check minAmountOut_ <= maxPayout
-but the actual "payout" by "amountIn_" no check  greater than minAmountOut_
-```solidity
-    function findMarketFor(
-        address payout_,
-        address quote_,
-        uint256 amountIn_,
-        uint256 minAmountOut_,
-        uint256 maxExpiry_
-    ) external view returns (uint256) {
-...
-            if (expiry <= maxExpiry_) {
-                payouts[i] = minAmountOut_ <= maxPayout
-                    ? payoutFor(amountIn_, ids[i], address(0))
-                    : 0;
-
-                if (payouts[i] > highestOut) {//****@audit not check payouts[i] >= minAmountOut_******//
-                    highestOut = payouts[i];
-                    id = ids[i];
-                }
-            }
-
-```
-
-
-## Impact
-
-The user gets the optimal market through BondAggregator#findMarketFor(), but incorrectly returns a market smaller than minAmountOut_, and the call to purchase must fail, resulting in wasted gas
-
-## Code Snippet
-
-https://github.com/sherlock-audit/2022-11-bond/blob/main/src/BondAggregator.sol#L248
-
-## Tool used
-
-Manual Review
-
-## Recommendation
-```solidity
-    function findMarketFor(
-        address payout_,
-        address quote_,
-        uint256 amountIn_,
-        uint256 minAmountOut_,
-        uint256 maxExpiry_
-    ) external view returns (uint256) {
-...
-            if (expiry <= maxExpiry_) {
-                payouts[i] = minAmountOut_ <= maxPayout
-                    ? payoutFor(amountIn_, ids[i], address(0))
-                    : 0;
-
--               if (payouts[i] > highestOut) {
-+               if (payouts[i] >= minAmountOut_ && payouts[i] > highestOut) {
-                    highestOut = payouts[i];
-                    id = ids[i];
-                }
-            }
-
-```
-
-
-## Discussion
-
-**Evert0x**
-
-Message from sponsor
-
-----
-
-Agree with this issue. We implemented a check for `payout >= minAmountOut_` within the loop.
-
-
-
-**xiaoming9090**
-
-Fixed in https://github.com/Bond-Protocol/bonds/commit/7197f68354863c7b9be604d637cbc9b62105704b
-
-
-
-# Issue M-3: Lack of events for critical arithmetic parameters 
-
-Source: https://github.com/sherlock-audit/2022-11-bond-judging/issues/33 
-
-## Found by 
-zimu
-
-## Summary
-Function `BondBaseSDA.setDefaults` sets critical arithmetic parameters for bond market. But it has no event emitted, it is difficult to track these critical changes off-chain.
-
-## Vulnerability Detail
-In `bases/BondBaseSDA`, critical parameters are set and changed in function `BondBaseSDA.setDefaults` for bond market.
-![image](https://user-images.githubusercontent.com/112361239/201988699-b740b31b-e6d1-4bd8-b3da-2fb9bc7c68bd.png)
-
-However, no event is emitted, and it is difficult to track these critical changes off-chain.  Both Users and Issuers would possibly be unware of  these changes.
-
-## Impact
-Both Users and Issuers would possibly be unware of  critical changes on bond market.
-
-## Code Snippet
-https://github.com/sherlock-audit/2022-11-bond/blob/main/src/bases/BondBaseSDA.sol#L348-L356
-
-## Tool used
-Manual Review
-
-## Recommendation
-Add an event in `BondBaseSDA.setDefaults` to report critical arithmetic changes.
-
-## Discussion
-
-**Evert0x**
-
-Message from sponsor
-
-----
-
-Agree. We have updated `setDefaults` to emit an event with the newly set values.
-
-
-
-**xiaoming9090**
-
-Fixed in https://github.com/Bond-Protocol/bonds/commit/94e38f33b69b0184762c8be1c7bfd0716d97fed2
-
-
-
-# Issue M-4: Fixed Term Bond tokens can be minted with non-rounded expiry 
+# Issue M-2: Fixed Term Bond tokens can be minted with non-rounded expiry 
 
 Source: https://github.com/sherlock-audit/2022-11-bond-judging/issues/32 
 
@@ -409,7 +272,7 @@ Fixed in https://github.com/Bond-Protocol/bonds/commit/54b6833a46b5ae4c3a3ca183b
 
 
 
-# Issue M-5: Read-only reentrancy in BondFixedTermTeller 
+# Issue M-3: Read-only reentrancy in BondFixedTermTeller 
 
 Source: https://github.com/sherlock-audit/2022-11-bond-judging/issues/23 
 
@@ -471,7 +334,7 @@ Fixed in https://github.com/Bond-Protocol/bonds/commit/fafd81d04d685d15612cc56af
 
 
 
-# Issue M-6: Existing Circuit Breaker Implementation Allow Faster Taker To Extract Payout Tokens From Market 
+# Issue M-4: Existing Circuit Breaker Implementation Allow Faster Taker To Extract Payout Tokens From Market 
 
 Source: https://github.com/sherlock-audit/2022-11-bond-judging/issues/21 
 
@@ -555,7 +418,7 @@ Downgrading to medium because of comment from protocol
 
 
 
-# Issue M-7: Market Price Lower Than Expected 
+# Issue M-5: Market Price Lower Than Expected 
 
 Source: https://github.com/sherlock-audit/2022-11-bond-judging/issues/20 
 
@@ -645,7 +508,7 @@ Fixed in https://github.com/Bond-Protocol/bonds/commit/a77f0150dd4bf401a1b30c16e
 
 
 
-# Issue M-8: Teller Cannot Be Removed From Callback Contract 
+# Issue M-6: Teller Cannot Be Removed From Callback Contract 
 
 Source: https://github.com/sherlock-audit/2022-11-bond-judging/issues/18 
 
@@ -728,12 +591,12 @@ Fixed in https://github.com/Bond-Protocol/bonds/commit/368e6c5b120d9fc44c59cc21d
 
 
 
-# Issue M-9: Create Fee Discount Feature Is Broken 
+# Issue M-7: Create Fee Discount Feature Is Broken 
 
 Source: https://github.com/sherlock-audit/2022-11-bond-judging/issues/16 
 
 ## Found by 
-xiaoming90, 8olidity
+8olidity, xiaoming90
 
 ## Summary
 
@@ -833,7 +696,7 @@ Fixed in https://github.com/Bond-Protocol/bonds/commit/570eb0b74b2401c7b6d07a30f
 
 
 
-# Issue M-10: `BondAggregator.findMarketFor` Function Will Break In Certain Conditions 
+# Issue M-8: `BondAggregator.findMarketFor` Function Will Break In Certain Conditions 
 
 Source: https://github.com/sherlock-audit/2022-11-bond-judging/issues/14 
 
@@ -953,7 +816,7 @@ Fixed in https://github.com/Bond-Protocol/bonds/commit/56a11260c40785509215b8c81
 
 
 
-# Issue M-11: Auctioneer Cannot Be Removed From The Protocol 
+# Issue M-9: Auctioneer Cannot Be Removed From The Protocol 
 
 Source: https://github.com/sherlock-audit/2022-11-bond-judging/issues/13 
 
@@ -1024,7 +887,7 @@ We acknowledge that a whitelisted Auctioneer cannot be removed from the Aggregat
 
 
 
-# Issue M-12: Debt Decay Faster Than Expected 
+# Issue M-10: Debt Decay Faster Than Expected 
 
 Source: https://github.com/sherlock-audit/2022-11-bond-judging/issues/12 
 
@@ -1098,7 +961,7 @@ Fixed in https://github.com/Bond-Protocol/bonds/commit/071d2a450779dd34132248319
 
 
 
-# Issue M-13: BondBaseSDA.setDefaults doesn't validate inputs 
+# Issue M-11: BondBaseSDA.setDefaults doesn't validate inputs 
 
 Source: https://github.com/sherlock-audit/2022-11-bond-judging/issues/11 
 
@@ -1160,7 +1023,7 @@ Fixed in https://github.com/Bond-Protocol/bonds/commit/141c286cccb7797f8cca68eda
 
 
 
-# Issue M-14: BondAggregator.liveMarketsBy eventually will revert because of block gas limit 
+# Issue M-12: BondAggregator.liveMarketsBy eventually will revert because of block gas limit 
 
 Source: https://github.com/sherlock-audit/2022-11-bond-judging/issues/10 
 
@@ -1232,7 +1095,7 @@ Fixed in https://github.com/Bond-Protocol/bonds/commit/5a2a9a982f3bdfc31d22f72d2
 
 
 
-# Issue M-15: meta.tuneBelowCapacity param is not updated when BondBaseSDA.setIntervals is called 
+# Issue M-13: meta.tuneBelowCapacity param is not updated when BondBaseSDA.setIntervals is called 
 
 Source: https://github.com/sherlock-audit/2022-11-bond-judging/issues/9 
 
@@ -1376,12 +1239,12 @@ Fixed in https://github.com/Bond-Protocol/bonds/commit/bfd9eea0cc035b3ef1cca4072
 
 
 
-# Issue M-16: Solmate safetransfer and safetransferfrom does not check the code size of the token address, which may lead to funding loss 
+# Issue M-14: Solmate safetransfer and safetransferfrom does not check the code size of the token address, which may lead to funding loss 
 
 Source: https://github.com/sherlock-audit/2022-11-bond-judging/issues/8 
 
 ## Found by 
-Bnke0x0, 8olidity
+8olidity, Bnke0x0
 
 ## Summary
 
