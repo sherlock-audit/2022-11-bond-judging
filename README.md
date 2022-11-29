@@ -1244,7 +1244,7 @@ Fixed in https://github.com/Bond-Protocol/bonds/commit/bfd9eea0cc035b3ef1cca4072
 Source: https://github.com/sherlock-audit/2022-11-bond-judging/issues/8 
 
 ## Found by 
-8olidity, Bnke0x0
+Bnke0x0, 8olidity
 
 ## Summary
 
